@@ -373,12 +373,20 @@
     </div>
 </div>
 <div v-if="currentTab === 'expenses'" class="animate-fade-in">
-    <div class="expenses-banner text-white rounded-3xl p-8 mb-6 relative overflow-hidden">
-        <div class="absolute -right-10 -top-10 bg-white/10 w-48 h-48 rounded-full blur-3xl"></div>
-        <p class="text-sm text-cyan-200 mb-2 relative z-10">目前總花費 (JPY)</p>
-        <h2 class="text-5xl font-bold relative z-10 tracking-tight">¥ {{ formatNumber(totalExpensesJPY) }}</h2>
-        <p class="text-sm text-right mt-2 opacity-80 relative z-10">約 NT$ {{ formatNumber(totalExpensesTWD) }}</p>
+  <div class="mb-6">
+    <h4 class="text-xs font-bold text-slate-500 mb-3 pl-1">
+        <i class="fa-solid fa-users mr-2 text-deep-sea-blue"></i>個人支出總計 (JPY)
+    </h4>
+    <div class="flex overflow-x-auto gap-3 hide-scrollbar py-2">
+        <div v-for="(amount, name) in personOwes" :key="name" 
+             class="expenses-banner min-w-[140px] text-white rounded-2xl p-4 shadow-lg relative overflow-hidden flex-shrink-0">
+            <div class="absolute -right-4 -top-4 bg-white/10 w-16 h-16 rounded-full blur-xl"></div>
+            <p class="text-[10px] text-cyan-100 opacity-80 mb-1 relative z-10">{{ name }}</p>
+            <h2 class="text-xl font-bold relative z-10 tracking-tight">¥ {{ formatNumber(Math.round(amount)) }}</h2>
+            <p class="text-[9px] mt-1 opacity-70 relative z-10">約 NT$ {{ formatNumber(Math.round(amount * EXCHANGE_RATE)) }}</p>
+        </div>
     </div>
+</div>
 
     <div class="bg-white rounded-2xl p-4 mb-4 card-shadow mx-1 border border-ice-blue/50">
         <h4 class="text-xs font-bold text-slate-500 mb-3"><i class="fa-solid fa-user-tag mr-2 text-deep-sea-blue"></i>每人應付總計</h4>
