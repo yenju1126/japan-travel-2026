@@ -177,7 +177,9 @@
             <div class="flex overflow-x-auto hide-scrollbar space-x-3 pb-4 mb-2 snap-x px-1 sticky date-selector-sticky pt-1 -mx-4 px-4">
                 <div v-for="(day, index) in dates" :key="index" @click="selectedDateIndex = index"
                      class="snap-center flex-shrink-0 w-[58px] h-[68px] rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 border-2 shadow-sm"
-                     :class="selectedDateIndex === index ? 'bg-deep-sea-blue text-white border-deep-sea-blue shadow-lg scale-105' : 'bg-white text-slate-400 border-white hover:bg-soft-gray'">
+                     :class="selectedDateIndex === index 
+    ? 'bg-deep-sea-blue text-white border-blue-400 shadow-xl scale-110 z-10' 
+    : 'bg-white text-slate-500 border-slate-200 shadow-sm'">
                     <span class="text-sm font-bold uppercase tracking-wider">{{ day.weekday }}</span>
                     <span class="text-xs font-medium opacity-70">{{ day.date }}</span>
                 </div>
