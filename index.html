@@ -388,16 +388,33 @@
     </div>
 </div>
 
-    <div class="bg-white rounded-2xl p-4 mb-4 card-shadow mx-1 border border-ice-blue/50">
-        <h4 class="text-xs font-bold text-slate-500 mb-3"><i class="fa-solid fa-user-tag mr-2 text-deep-sea-blue"></i>每人應付總計</h4>
-        <div class="grid grid-cols-3 gap-2">
-            <div v-for="(amount, name) in personOwes" :key="name" class="bg-slate-50 p-2 rounded-xl text-center border border-slate-100">
-                <p class="text-[10px] text-slate-400">{{ name }}</p>
-                <p class="text-xs font-bold text-deep-sea-blue">¥{{ formatNumber(Math.round(amount)) }}</p>
+  <div class="bg-white rounded-2xl p-4 mb-4 card-shadow mx-1 border border-ice-blue/50">
+    <h4 class="text-xs font-bold text-slate-500 mb-3 flex justify-between">
+        <span>
+            <i class="fa-solid fa-hand-holding-dollar mr-2 text-deep-sea-blue"></i>
+            {{ dates[expenseDateIndex].date }} 結算 (誰給誰)
+        </span>
+        <span class="text-[10px] text-slate-400">JPY</span>
+    </h4>
+    
+    <div class="space-y-2">
+        <div v-for="(s, idx) in settlements" :key="idx" 
+             class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <div class="flex items-center space-x-2">
+                <span class="font-bold text-slate-700 text-sm">{{ s.from }}</span>
+                <i class="fa-solid fa-arrow-right text-[10px] text-slate-300"></i>
+                <span class="font-bold text-deep-sea-blue text-sm">{{ s.to }}</span>
+            </div>
+            <div class="text-right">
+                <p class="text-xs font-black text-red-500">¥ {{ formatNumber(s.amount) }}</p>
             </div>
         </div>
-    </div>
 
+        <div v-if="settlements.length === 0" class="text-center py-2 text-slate-400 text-xs italic">
+            本日帳目已平
+        </div>
+    </div>
+</div>
     <div class="mb-6 mx-1">
         <h4 class="text-xs font-bold text-slate-500 mb-3 pl-1"><i class="fa-solid fa-calendar-day mr-2 text-orange-400"></i>每日統計</h4>
         <div class="flex overflow-x-auto gap-2 hide-scrollbar">
@@ -581,6 +598,7 @@ createApp({
     // 只回傳日期相符的消費項目
     return expenses.value.filter(exp => exp.date === targetDate);
 });
+
         
         // 核心資料庫狀態
         const itineraryData = ref([ [], [], [], [], [], [], [], [] ]); // 初始化 8 天空陣列
@@ -844,7 +862,45 @@ const handleImageUpload = (event) => {
         reader.readAsDataURL(file);
     }
 };
-      // 修改你原本的 addShoppingItem
+     // 在 setup() 內 return 之前新增
+const settlements = computed(() => {
+    const balances = {};
+    groupMembers.forEach(m => balances[m] = 0);
+
+    // 關鍵修改：改用 filteredExpenses（當天消費）而不是全部消費
+    filteredExpenses.value.forEach(exp => {
+        // 1. 墊付者加錢
+        balances[exp.payer] += Number(exp.amount);
+        // 2. 分攤者扣錢
+        const amountPerPerson = Number(exp.amount) / (exp.splitMembers?.length || 1);
+        exp.splitMembers?.forEach(member => {
+            balances[member] -= amountPerPerson;
+        });
+    });
+
+    const payers = [];
+    const receivers = [];
+    Object.keys(balances).forEach(m => {
+        if (balances[m] > 1) receivers.push({ name: m, amount: balances[m] });
+        else if (balances[m] < -1) payers.push({ name: m, amount: Math.abs(balances[m]) });
+    });
+
+    const results = [];
+    payers.forEach(p => {
+        receivers.forEach(r => {
+            if (p.amount > 0 && r.amount > 0) {
+                const settle = Math.min(p.amount, r.amount);
+                results.push({ from: p.name, to: r.name, amount: Math.round(settle) });
+                p.amount -= settle;
+                r.amount -= settle;
+            }
+        });
+    });
+    return results;
+});
+
+// 記得在最後的 return 加入 settlements
+     // 修改你原本的 addShoppingItem
 const addShoppingItem = () => {
     if (!newShoppingItem.value.name) return;
     
@@ -884,13 +940,12 @@ const removeShoppingItem = (id) => {
     }; 
     syncToFirebase();
 };
-        const removeExpense = (item) => { 
+       const removeExpense = (item) => {
     if(confirm('確定要刪除這筆花費嗎？')) {
-        // 在原始的 expenses 陣列中尋找這筆資料的索引
         const index = expenses.value.findIndex(e => e === item);
         if (index !== -1) {
-            expenses.value.splice(index, 1); 
-            syncToFirebase(); 
+            expenses.value.splice(index, 1);
+            syncToFirebase();
         }
     }
 };
@@ -916,7 +971,7 @@ const removeShoppingItem = (id) => {
             showItineraryModal, showShoppingModal, showExpenseModal, isEditMode,
             newItinerary, newShoppingItem, newExpense,
             saveItineraryItem, deleteItineraryItem, editItem, moveItineraryUp, moveItineraryDown, addShoppingItem, removeShoppingItem, addExpense, removeExpense,buyers, selectedBuyer, filteredShoppingList,
-    addShoppingItem,expenseDateIndex, removeShoppingItem,handleImageUpload,groupMembers, toggleSplitMember, dailyExpenses, personOwes,filteredExpenses,
+    addShoppingItem,expenseDateIndex, removeShoppingItem,handleImageUpload,groupMembers,settlements, toggleSplitMember, dailyExpenses, personOwes,filteredExpenses,
             totalExpensesJPY, totalExpensesTWD
         }
     }
