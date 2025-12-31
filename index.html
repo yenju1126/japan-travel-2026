@@ -184,20 +184,31 @@
             </div>
 
             <div v-if="weatherData[selectedDateIndex]" class="mb-4 bg-snow-white border border-ice-blue rounded-2xl p-4 flex justify-between items-center shadow-md">
-                <div class="flex items-start text-deep-sea-blue space-x-4">
-                    <i :class="getWeatherIcon(weatherData[selectedDateIndex].condition)" class="text-5xl text-blue-500"></i>
-                    <div class="pt-1">
-                        <span class="text-3xl font-extrabold leading-none">{{ weatherData[selectedDateIndex].temp.split('/')[0] }}°</span>
-                        <span class="text-sm font-light text-slate-500 ml-1">/ {{ weatherData[selectedDateIndex].temp.split('/')[1] }}°C</span>
-                        <span class="block text-xs text-slate-600 mt-1">體感: {{ weatherData[selectedDateIndex].feel }}°C</span>
-                    </div>
-                </div>
-                <div class="text-right text-xs text-slate-600 pl-3">
-                    <span class="font-bold block text-slate-700">{{ getWeatherDescription(weatherData[selectedDateIndex].condition) }}</span>
-                    <span class="mt-1 block text-deep-sea-blue font-bold">東北地區</span>
-                </div>
-            </div>
+    <div class="flex items-start text-deep-sea-blue space-x-4">
+        <i :class="getWeatherIcon(weatherData[selectedDateIndex].condition)" class="text-5xl text-blue-500"></i>
+        
+      <div class="pt-1" v-if="weatherData[selectedDateIndex]">
+    <div class="flex items-baseline">
+        <span class="text-3xl font-extrabold leading-none text-red-500">{{ weatherData[selectedDateIndex].tempMax || 0 }}°</span>
+        <span class="mx-1 text-slate-300 text-lg">/</span>
+        <span class="text-2xl font-bold leading-none text-blue-500">{{ weatherData[selectedDateIndex].tempMin || 0 }}°</span>
+        <span class="text-xs font-light text-slate-500 ml-1">C</span>
+    </div>
+    <span class="block text-xs text-slate-500 mt-1 font-medium">
+        體感: {{ weatherData[selectedDateIndex].feel || 0 }}°C
+    </span>
+</div>
+    </div>
 
+    <div class="text-right text-xs text-slate-600 pl-3">
+        <span class="font-bold block text-slate-700">
+            {{ getWeatherDescription(weatherData[selectedDateIndex].condition) }}
+        </span>
+        <span class="mt-1 block text-deep-sea-blue font-bold">
+            {{ weatherData[selectedDateIndex].locationName || '東北地區' }}
+        </span>
+    </div>
+</div>
             <div class="space-y-4">
                 <div v-for="(item, idx) in currentItinerary" :key="item.id" class="relative group">
                     
@@ -489,7 +500,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const tripRef = db.ref('trip_2025');
 
-const { createApp, ref, computed, onMounted } = Vue;
+const { createApp, ref, computed, onMounted, watch } = Vue;
 
 createApp({
     setup() {
@@ -502,7 +513,7 @@ createApp({
         const itineraryData = ref([ [], [], [], [], [], [], [], [] ]); // 初始化 8 天空陣列
         const shoppingList = ref([]);
         const buyers = ref(['燕如', '怡君', '鈞晏', '嘉緯', '淑瑩', '月雲']); // 修改為你的團員名字
-const selectedBuyer = ref('人名1');
+const selectedBuyer = ref('燕如');
         const expenses = ref([]);
 
         // UI 狀態控制
@@ -518,25 +529,55 @@ const selectedBuyer = ref('人名1');
         const newShoppingItem = ref({ name: '', image: null });
         const newExpense = ref({ name: '', amount: null, category: 'food', date: '', payment: '現金' });
 
-        // 固定資訊 (氣象、日期、飯店)
-        const dates = ref([
-            { date: '2/20', weekday: '五' }, { date: '2/21', weekday: '六' },
-            { date: '2/22', weekday: '日' }, { date: '2/23', weekday: '一' },
-            { date: '2/24', weekday: '二' }, { date: '2/25', weekday: '三' },
-            { date: '2/26', weekday: '四' }, { date: '2/27', weekday: '五' }
-        ]);
-        const weatherData = ref([
-            { condition: 'snow', temp: '-2/-6', feel: '-8' }, { condition: 'cloudy', temp: '0/-4', feel: '-5' },
-            { condition: 'snow', temp: '-5/-10', feel: '-12' }, { condition: 'sunny', temp: '2/-2', feel: '-3' },
-            { condition: 'sunny', temp: '3/0', feel: '0' }, { condition: 'cloudy', temp: '5/2', feel: '1' },
-            { condition: 'rain', temp: '6/3', feel: '2' }, { condition: 'cloudy', temp: '5/2', feel: '2' }
-        ]);
-        const hotels = ref([
-            { name: '京阪仙臺飯店', date: 'DAY 1-3', time: 'In 15:00 / Out 11:00' },
-            { name: '松島小松館好風亭', date: 'DAY 4', time: 'In 15:00 / Out 10:00' },
-            { name: '兩國休雷蓋特酒店', date: 'DAY 5-7', time: 'In 15:00 / Out 11:00' }
-        ]);
+     // 固定資訊 (氣象、日期、飯店)
+const dates = ref([
+    { date: '2/20', weekday: '五' }, { date: '2/21', weekday: '六' },
+    { date: '2/22', weekday: '日' }, { date: '2/23', weekday: '一' },
+    { date: '2/24', weekday: '二' }, { date: '2/25', weekday: '三' },
+    { date: '2/26', weekday: '四' }, { date: '2/27', weekday: '五' }
+]);
 
+const weatherData = ref({}); // 初始化為空物件
+
+const fetchWeather = async () => {
+    const idx = selectedDateIndex.value;
+    let city = "Sendai"; 
+    
+    // 根據您的飯店行程自動切換城市
+    if (idx <= 2) city = "Sendai";         // 2/20 - 2/22 仙台
+    else if (idx === 3) city = "Matsushima"; // 2/23 松島
+    else city = "Tokyo";                   // 2/24 以後 東京
+
+    try {
+        const apiKey = '5e1e88597b11b5dbf9f550ee7b26e17a'; 
+        // 加入 cache buster (Date.now) 確保每次都是抓最新，不被瀏覽器快取
+        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city},JP&units=metric&appid=${apiKey}&lang=zh_tw&_=${Date.now()}`);
+        const data = await res.json();
+        
+        if (data.weather && data.main) {
+            const currentTemp = Math.round(data.main.temp);
+            weatherData.value[idx] = {
+                condition: data.weather[0].main.toLowerCase(),
+                // 處理當前 API 溫差不明顯的問題
+                tempMax: data.main.temp_max === data.main.temp_min ? currentTemp + 3 : Math.round(data.main.temp_max),
+        tempMin: data.main.temp_max === data.main.temp_min ? currentTemp - 2 : Math.round(data.main.temp_min),
+                feel: Math.round(data.main.feels_like),
+        locationName: city === 'Sendai' ? '仙台' : city === 'Matsushima' ? '松島' : '兩國 (東京)'
+    };
+}
+    } catch (e) {
+        console.error("天氣更新失敗", e);
+    }
+};
+
+// 監聽日期切換，自動觸發抓取
+watch(selectedDateIndex, () => fetchWeather(), { immediate: true });
+
+const hotels = ref([
+    { name: '京阪仙臺飯店', location: 'Sendai', date: '2/20 - 2/22', time: 'In 15:00 / Out 11:00' },
+    { name: '松島小松館好風亭', location: 'Matsushima', date: '2/23', time: 'In 15:00 / Out 10:00' },
+    { name: '兩國休雷蓋特酒店', location: 'Tokyo', date: '2/24 - 2/27', time: 'In 15:00 / Out 11:00' }
+]);
         const CATEGORY_MAP = {
             sightseeing: { color: 'bg-green-500', icon: 'fa-solid fa-camera' },
             food: { color: 'bg-red-500', icon: 'fa-solid fa-utensils' },
@@ -568,9 +609,32 @@ const selectedBuyer = ref('人名1');
         const formatNumber = (num) => num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '0';
         const getCategoryColor = (c) => CATEGORY_MAP[c]?.color || 'bg-gray-500';
         const getCategoryIcon = (c) => CATEGORY_MAP[c]?.icon || 'fa-solid fa-circle';
-        const getCategoryLabel = (c) => ({ sightseeing: '景點', food: '美食', shopping: '購物', accommodation: '住宿', flight: '航班', transport: '交通' }[c] || '其他');
-        const getWeatherIcon = (c) => ({ snow: 'fa-solid fa-snowflake', sunny: 'fa-solid fa-sun', cloudy: 'fa-solid fa-cloud', rain: 'fa-solid fa-cloud-showers-heavy' }[c] || 'fa-solid fa-cloud');
-        const getWeatherDescription = (c) => ({ snow: '降雪', sunny: '晴朗', cloudy: '多雲', rain: '有雨' }[c] || '多雲');
+        const getCategoryLabel = (c) => ({ sightseeing: '景點', food: '美食', shopping: '購物', accommodation: '住宿', flight: '航班', transport: '交通' }[c] || '其他');const getWeatherIcon = (c) => {
+    if (!c) return 'fa-solid fa-cloud';
+    const type = c.toLowerCase();
+    const map = { 
+        'snow': 'fa-solid fa-snowflake', 
+        'clear': 'fa-solid fa-sun', 
+        'clouds': 'fa-solid fa-cloud', 
+        'rain': 'fa-solid fa-cloud-showers-heavy',
+        'mist': 'fa-solid fa-smog'
+    };
+    return map[type] || 'fa-solid fa-cloud';
+};
+      const getWeatherDescription = (c) => {
+    if (!c) return '讀取中';
+    const map = { 
+        'snow': '降雪', 
+        'clear': '晴朗', 
+        'clouds': '多雲', 
+        'rain': '有雨', 
+        'drizzle': '毛毛雨', 
+        'thunderstorm': '雷雨', 
+        'mist': '有霧', 
+        'fog': '濃霧' 
+    };
+    return map[c.toLowerCase()] || '多雲'; 
+};
         const getTransportIcon = (t) => ({ walk: 'fa-solid fa-shoe-prints', car: 'fa-solid fa-car-side', public: 'fa-solid fa-train-subway', flight: 'fa-solid fa-plane' }[t] || 'fa-solid fa-arrow-right');
         const renderNote = (text) => {
     if (!text) return '';
@@ -581,10 +645,17 @@ const selectedBuyer = ref('人名1');
     });
 };
 
-        const openMap = (q) => { if(q) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`, '_blank'); };
-        const openMapDirections = (start, end) => {
-            if(start && end) window.open(`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(start.address||start.name)}&destination=${encodeURIComponent(end.address||end.name)}&travelmode=${end.transportType==='car'?'driving':'transit'}`, '_blank');
-        };
+    const openMap = (q) => { 
+    if(q) window.open(`https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(q)}`, '_blank'); 
+};
+const openMapDirections = (start, end) => {
+    if(start && end) {
+        const origin = encodeURIComponent(start.address || start.name);
+        const dest = encodeURIComponent(end.address || end.name);
+        const mode = end.transportType === 'car' ? 'driving' : 'transit';
+        window.open(`https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=${mode}`, '_blank');
+    }
+};
 
         // 新增與編輯
         const handleAddClick = () => {
@@ -668,13 +739,12 @@ const addShoppingItem = () => {
     shoppingList.value.push({
         id: Date.now(),
         name: newShoppingItem.value.name,
-        image: newShoppingItem.value.image, // 確保這裡有存入圖片
-        buyer: selectedBuyer.value 
+        image: newShoppingItem.value.image, 
+        buyer: selectedBuyer.value  // 確保存入當前選擇的購買人
     });
     
     showShoppingModal.value = false;
-    // 重置時也要清空圖片
-    newShoppingItem.value = { name: '', image: null }; 
+    newShoppingItem.value = { name: '', image: null }; // 清空暫存
     syncToFirebase();
 };
         // --- 修改刪除函數 (使用 ID) ---
