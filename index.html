@@ -507,7 +507,8 @@ createApp({
         const selectedDateIndex = ref(0);
         const expenseDateIndex = ref(0);
 
-        const itineraryData = ref([[],[],[],[],[],[],[],[]]);
+        // 根據 dates 的長度動態產生初始陣列，確保每一天都有對應的空陣列
+const itineraryData = ref(Array.from({ length: 8 }, () => []));
         const shoppingList = ref([]);
         const expenses = ref([]);
         const weatherData = ref({});
@@ -769,16 +770,27 @@ createApp({
         };
         watch(selectedDateIndex, ()=>fetchWeather(), { immediate:true });
 
-        onMounted(()=>{
-            calculateCurrency();
-            tripRef.on('value', snap => {
-                const d = snap.val();
-                if(!d) return;
-                if(d.itineraryData) itineraryData.value = d.itineraryData;
-                if(d.shoppingList) shoppingList.value = d.shoppingList;
-                if(d.expenses) expenses.value = d.expenses;
-            });
-        });
+       onMounted(()=>{
+    calculateCurrency();
+    tripRef.on('value', snap => {
+        const d = snap.val();
+        if(!d) return;
+        
+        // 修正：讀取資料時，確保陣列長度至少要跟 dates 一樣長
+        if(d.itineraryData) {
+            let fetchedData = d.itineraryData;
+            const totalDays = dates.value.length;
+            // 如果 Firebase 存的資料天數比設定的少，自動補齊空陣列
+            while(fetchedData.length < totalDays) {
+                fetchedData.push([]);
+            }
+            itineraryData.value = fetchedData;
+        }
+        
+        if(d.shoppingList) shoppingList.value = d.shoppingList;
+        if(d.expenses) expenses.value = d.expenses;
+    });
+});
 return {
             EXCHANGE_RATE, currentTab, dates, selectedDateIndex, itineraryData, currentItinerary, hotels, shoppingList, expenses,
             weatherData, currencyInput, currencyResult, calculateCurrency, formatNumber, getCategoryColor, getCategoryIcon, getCategoryLabel,
