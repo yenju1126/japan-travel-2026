@@ -346,95 +346,104 @@
          - 為了簡潔性，表單欄位與按鈕與原本功能一致
        ========================== -->
     <!-- ITINERARY Modal：新增 / 編輯行程 -->
-   <div v-if="showItineraryModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
-    <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+<div v-if="showItineraryModal" class="fixed inset-0 bg-[#01579B]/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="bg-white w-full max-w-lg rounded-t-[32px] sm:rounded-[32px] p-6 shadow-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden transition-all">
         
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold text-slate-800">{{ isEditMode ? '編輯行程' : '新增行程' }}</h3>
-            <button @click="showItineraryModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <div class="flex justify-between items-center mb-6 px-1">
+            <div class="flex items-center gap-2">
+                <div class="w-1.5 h-6 bg-deep-sea-blue rounded-full"></div>
+                <h3 class="text-xl font-bold text-slate-800">{{ isEditMode ? '編輯行程' : '新增行程項目' }}</h3>
+            </div>
+            <button @click="showItineraryModal = false" class="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-400 rounded-full hover:bg-slate-200 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
 
-        <div class="space-y-5">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="flex flex-col gap-1">
-                    <label class="text-[10px] text-slate-400 ml-1">行程名稱</label>
-                    <input v-model="newItinerary.name" placeholder="要去哪裡？" class="bg-slate-50 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"/>
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-slate-500 ml-1">行程名稱</label>
+                    <input v-model="newItinerary.name" placeholder="要去哪裡？" class="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm focus:ring-2 focus:ring-blue-100 transition-all font-medium"/>
                 </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-[10px] text-slate-400 ml-1">活動分類</label>
-                    <select v-model="newItinerary.category" class="bg-slate-50 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-100">
-                        <option value="sightseeing">景點</option>
-                        <option value="food">美食</option>
-                        <option value="shopping">購物</option>
-                        <option value="accommodation">住宿</option>
-                        <option value="flight">航班</option>
-                        <option value="transport">交通</option>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-slate-500 ml-1">活動分類</label>
+                    <select v-model="newItinerary.category" class="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm focus:ring-2 focus:ring-blue-100 appearance-none font-medium text-slate-700">
+                        <option value="sightseeing">📸 景點</option>
+                        <option value="food">🍱 美食</option>
+                        <option value="shopping">🛍️ 購物</option>
+                        <option value="accommodation">🏨 住宿</option>
+                        <option value="flight">✈️ 航班</option>
+                        <option value="transport">🚌 交通</option>
                     </select>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div class="flex flex-col gap-1">
-                    <label class="text-[10px] text-slate-400 ml-1">開始時間</label>
-                    <input v-model="newItinerary.startTime" type="time" class="bg-slate-50 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"/>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-slate-500 ml-1">開始時間</label>
+                    <input v-model="newItinerary.startTime" type="time" class="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm focus:ring-2 focus:ring-blue-100 font-medium"/>
                 </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-[10px] text-slate-400 ml-1">地址/地點</label>
-                    <input v-model="newItinerary.address" placeholder="地點或地址" class="bg-slate-50 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"/>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-slate-500 ml-1">地址/地點</label>
+                    <input v-model="newItinerary.address" placeholder="地點或地址" class="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm focus:ring-2 focus:ring-blue-100 font-medium"/>
                 </div>
             </div>
 
-            <div class="flex flex-col gap-1">
-                <label class="text-[10px] text-slate-400 ml-1">行程詳細備註 (會自動換行)</label>
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-slate-500 ml-1">行程詳細備註</label>
                 <textarea v-model="newItinerary.note" placeholder="例如：預約號碼、門票資訊..." rows="3" 
-                          class="w-full bg-slate-50 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-100 min-h-[80px]"></textarea>
+                          class="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm focus:ring-2 focus:ring-blue-100 min-h-[90px] font-medium"></textarea>
             </div>
 
-            <div class="border-t border-slate-100 pt-4 mt-2">
-                <div class="flex items-center text-slate-500 text-xs font-bold mb-3">
-                    <i class="fa-solid fa-bus-simple mr-2"></i>交通與乘車資訊設定
+            <div class="bg-blue-50/50 rounded-[24px] p-5 space-y-4 border border-blue-100/50 mt-2">
+                <div class="flex items-center text-deep-sea-blue text-xs font-bold">
+                    <i class="fa-solid fa-route mr-2"></i>交通與乘車資訊設定
                 </div>
                 
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[10px] text-slate-400 ml-1">交通工具</label>
-                            <div class="flex gap-1">
-                                <button v-for="t in ['walk','car','public','flight']" :key="t"
-                                        @click="newItinerary.transportType = t"
-                                        :class="newItinerary.transportType === t ? 'bg-deep-sea-blue text-white' : 'bg-slate-200 text-slate-500'"
-                                        class="flex-1 py-2 rounded-lg text-xs transition-all">
-                                    <i :class="getTransportIcon(t)"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[10px] text-red-500 font-bold ml-1">班次時刻 (紅色顯示)</label>
-                            <input v-model="newItinerary.transitTime" placeholder="例: 10:24" 
-                                   class="bg-slate-50 rounded-xl p-3 text-sm text-red-500 font-bold outline-none focus:ring-2 focus:ring-red-100"/>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[11px] font-bold text-blue-400 ml-1">交通方式</label>
+                        <div class="flex bg-white/60 p-1 rounded-xl gap-1">
+                            <button v-for="t in ['walk','car','public','flight']" :key="t"
+                                    @click="newItinerary.transportType = t"
+                                    :class="newItinerary.transportType === t ? 'bg-deep-sea-blue text-white shadow-md' : 'text-slate-400 hover:bg-slate-100'"
+                                    class="flex-1 py-2 rounded-lg text-xs transition-all duration-300">
+                                <i :class="getTransportIcon(t)"></i>
+                            </button>
                         </div>
                     </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[11px] font-bold text-red-400 ml-1">班次時刻 (紅色顯示)</label>
+                        <input v-model="newItinerary.transitTime" placeholder="10:24-11:05" 
+                               class="w-full bg-white border-none rounded-xl p-3 text-sm text-red-500 font-bold shadow-sm focus:ring-2 focus:ring-red-200 transition-all"/>
+                    </div>
+                </div>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[10px] text-slate-400 ml-1">總耗時 (如: 45m)</label>
-                            <input v-model="newItinerary.travelTime" placeholder="輸入時長" 
-                                   class="bg-slate-50 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"/>
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[10px] text-slate-400 ml-1">轉乘備註 (如: 往仙台)</label>
-                            <input v-model="newItinerary.transNote" placeholder="輸入備註" 
-                                   class="bg-slate-50 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-100"/>
-                        </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[11px] font-bold text-blue-400 ml-1">預計耗時 (如: 45m)</label>
+                        <input v-model="newItinerary.travelTime" placeholder="輸入時長" 
+                               class="w-full bg-white border-none rounded-xl p-3 text-sm font-medium shadow-sm focus:ring-2 focus:ring-blue-200 transition-all"/>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[11px] font-bold text-blue-400 ml-1">轉乘備註 (如: 往仙台)</label>
+                        <input v-model="newItinerary.transNote" placeholder="輸入備註" 
+                               class="w-full bg-white border-none rounded-xl p-3 text-sm font-medium shadow-sm focus:ring-2 focus:ring-blue-200 transition-all"/>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3 mt-8">
-            <button v-if="isEditMode" @click="deleteItineraryItem" class="bg-red-50 text-red-500 font-bold py-4 rounded-2xl hover:bg-red-100 transition-all">刪除項目</button>
-            <button @click="saveItineraryItem" :class="isEditMode ? 'bg-deep-sea-blue text-white' : 'col-span-2 bg-deep-sea-blue text-white'" class="font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 hover:brightness-110 transition-all">
-                {{ isEditMode ? '儲存修改' : '加入行程' }}
+            <button v-if="isEditMode" @click="deleteItineraryItem" 
+                    class="bg-red-50 text-red-500 font-bold py-4 rounded-2xl hover:bg-red-100 active:scale-95 transition-all text-sm">
+                <i class="fa-solid fa-trash-can mr-2"></i>刪除項目
+            </button>
+            <button @click="saveItineraryItem" 
+                    :class="isEditMode ? 'bg-deep-sea-blue text-white' : 'col-span-2 bg-deep-sea-blue text-white'" 
+                    class="font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 hover:brightness-110 active:scale-95 transition-all text-sm">
+                <i class="fa-solid fa-check mr-2"></i>{{ isEditMode ? '儲存修改' : '確認加入行程' }}
             </button>
         </div>
     </div>
