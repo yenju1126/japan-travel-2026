@@ -51,17 +51,24 @@
         .animate-fade-in{ animation:fadeIn .4s ease-out; } @keyframes fadeIn{ from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none} }
         .fab-shadow{ box-shadow:0 4px 15px rgba(255,213,79,.5); }
 
-        /* 備註收合效果 */
-        .note-content { 
-        max-height: 4.5rem; /* 預設高度，若內容短則自動適應 */
-        overflow: hidden; 
-        transition: max-height 0.3s ease-in-out;
-        word-break: break-all; /* 修正：解決長網址溢出問題 */
-        line-height: 1.5;
-    } 
-    .note-content.expanded { 
-        max-height: 2000px; /* 展開後隨內容增高 */
-    }
+    .note-content { 
+    line-height: 1.5;
+    max-height: 6rem; /* 1.5 * 4 = 6rem */
+    overflow: hidden; 
+    transition: max-height 0.3s ease-in-out;
+    word-break: break-all;
+    /* 以下是關鍵：強制顯示省略號並限制行數 */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4; 
+}
+
+/* 展開狀態：取消行數限制 */
+.note-content.expanded { 
+    max-height: 2000px; 
+    display: block; 
+    -webkit-line-clamp: unset; 
+}
     /* 交通備註：移除寬度限制，改為自動換行並隨內容增高 */
 .transport-note-box {
     word-break: break-all;
@@ -168,12 +175,21 @@
                             </div>
 
                             <!-- 備註區：支援連結轉換與收合 -->
-                           <div v-if="item.note && item.note.length" class="mt-3 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100 mr-10">
+            <div v-if="item.note && item.note.length" class="mt-3 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100 mr-10">
     <p class="text-slate-600 font-bold mb-1 flex items-center">
         <i class="fa-solid fa-highlighter text-accent-yellow mr-2"></i> 備註
     </p>
-    <div class="note-content whitespace-pre-wrap" :class="{'expanded': item.isNoteExpanded}" v-html="renderNote(item.note)"></div>
-    <button v-if="item.note.length>50" @click="item.isNoteExpanded=!item.isNoteExpanded" class="text-deep-sea-blue font-bold mt-1 block">{{ item.isNoteExpanded ? '收合備註' : '查看更多...' }}</button>
+    
+    <div class="note-content whitespace-pre-wrap text-slate-600" 
+         :class="{'expanded': item.isNoteExpanded}" 
+         v-html="renderNote(item.note)">
+    </div>
+    
+    <button v-if="item.note.length > 50" 
+            @click="item.isNoteExpanded = !item.isNoteExpanded" 
+            class="text-deep-sea-blue font-bold mt-1 block">
+        {{ item.isNoteExpanded ? '收合備註 ▲' : '查看更多... ▼' }}
+    </button>
 </div>
                         </div>
 
@@ -533,11 +549,19 @@ const itineraryData = ref(Array.from({ length: 8 }, () => []));
         const currencyInput = ref(10000), currencyResult = ref(0);
 
         // 修正：確保 newItinerary 包含所有欄位
-        const newItinerary = ref({ 
-            id: null, name: '', category: 'sightseeing', startTime: '', 
-            address: '', note: '', transportType: 'car', travelTime: '', 
-            transNote: '', transitTime: '', isNoteExpanded: false 
-        });
+       const newItinerary = ref({ 
+    id: null, 
+    name: '', 
+    category: 'sightseeing', 
+    startTime: '', 
+    address: '', 
+    note: '', 
+    transportType: 'car', 
+    travelTime: '', 
+    transNote: '', 
+    transitTime: '', 
+    isNoteExpanded: false // 預設為收合
+});
         const newShoppingItem = ref({ name:'', image:null });
         const newExpense = ref({ name:'', amount:null, category:'food', date:'', payer:groupMembers[0], splitMembers:[...groupMembers] });
 
@@ -653,16 +677,28 @@ const itineraryData = ref(Array.from({ length: 8 }, () => []));
         showExpenseModal.value = true;
     }
 };
-        const saveItineraryItem = ()=>{
-            const list = itineraryData.value[selectedDateIndex.value];
-            if(isEditMode.value){
-                const i = list.findIndex(x=>x.id===newItinerary.value.id);
-                if(i!==-1) list[i] = { ...newItinerary.value };
-            } else {
-                list.push({ ...newItinerary.value, id: Date.now() });
-            }
-            showItineraryModal.value = false; syncToFirebase();
-        };
+        const saveItineraryItem = () => {
+    const list = itineraryData.value[selectedDateIndex.value];
+    
+    // 建立新物件，並確保包含 isNoteExpanded 開關屬性
+    const itemData = { 
+        ...newItinerary.value, 
+        isNoteExpanded: !!newItinerary.value.isNoteExpanded 
+    };
+
+    if (isEditMode.value) {
+        const i = list.findIndex(x => x.id === newItinerary.value.id);
+        if (i !== -1) {
+            list[i] = itemData; // 覆蓋舊資料
+        }
+    } else {
+        itemData.id = Date.now(); // 產生新 ID
+        list.push(itemData);
+    }
+    
+    showItineraryModal.value = false; 
+    syncToFirebase();
+};
 
         const deleteItineraryItem = ()=> {
             if(confirm('確定要刪除此行程嗎？')){
